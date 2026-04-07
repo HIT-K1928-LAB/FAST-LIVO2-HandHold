@@ -1,5 +1,7 @@
-# FAST-LIVO2 全套驱动及代码使用tips
+# FAST-LIVO2 handhold复现指南
+本项目基于[`liv-handhold2 (LIV-Eye)`](https://github.com/hku-mars/LIV_handhold_2)、 [`liv-handhold`](https://github.com/xuankuzcr/LIV_handhold)的硬件，运行[`FAST-LIVO2`](https://github.com/hku-mars/FAST-LIVO2)。
 - wiki可参考: [简达智能的wiki](https://gitee.com/gwmunan/ros2/wikis)
+- 参考视频：[GundaSmart: SLAM系列之Fast Livo复现](https://www.bilibili.com/video/BV1T142197ci)
 
 ### 项目相关仓库readme导航
 
@@ -22,7 +24,9 @@
 
 ## 硬件
 ### 硬件结构
-* 本项目对应使用的是基于GitHub [`liv-handhold2 (LIV-Eye)`](https://github.com/hku-mars/LIV_handhold_2)仓库中修改的硬件结构。  
+* 本项目使用的是基于GitHub [`liv-handhold2 (LIV-Eye)`](https://github.com/hku-mars/LIV_handhold_2)仓库提供文件修改的3D打印件，3D打印模型位于`CAD_models`。
+* 硬件部分使用MID-360以及海康工业相机MV-CS020-10UC。
+* 项目运行在Nvidia Jetson Orin NX（aarch64架构）。
 
 ### 同步器
 * 本项目对应使用的是GitHub [`liv-handhold`](https://github.com/xuankuzcr/LIV_handhold)仓库中使用的自制STM32硬件同步器。  
