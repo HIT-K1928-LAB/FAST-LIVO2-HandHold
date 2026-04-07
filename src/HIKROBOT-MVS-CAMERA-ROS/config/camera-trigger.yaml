@@ -1,0 +1,23 @@
+# true 1 和 false 0 
+width: 3072             #图像宽度
+height: 2048            #图像高度
+Offset_x: 0             #X方向偏置
+Offset_y: 0             #Y方向偏置
+
+FrameRateEnable: false   #使能 
+# FrameRate: 10           #帧率
+
+TriggerMode: true      # 0-连续采集 1-触发
+TriggerSource: 1       # 触发源选择 0=软件触发, 1=硬件触发
+# trigger_activation: 0   # 触发沿选择 0=上升沿, 1=下降沿
+LineSelector: 0         # 线路选择
+
+ExposureTime: 5000     #曝光时间
+
+GammaEnable: true
+Gamma: 0.7              #伽马因子
+
+GainAuto: 2             #亮度的固定增益
+
+SaturationEnable: false
+Saturation: 128          #饱和度

@@ -1,0 +1,13 @@
+# Camera intrinsic parameters for MV-CS020-10UC camera
+cam_model: Pinhole
+cam_width: 1624
+cam_height: 1240
+scale: 1.0
+cam_fx: 1395.774434
+cam_fy: 1387.808825
+cam_cx: 838.626478
+cam_cy: 642.339554
+cam_d0: -0.071571
+cam_d1: 0.092911
+cam_d2: -0.001554
+cam_d3: 0.000274

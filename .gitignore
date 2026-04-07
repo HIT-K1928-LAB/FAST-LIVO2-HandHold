@@ -1,0 +1,12 @@
+# 编译目录不备份
+.catkin_tools/
+.catkin_workspace
+build/
+devel/
+logs/
+
+# vscode
+.vscode/
+
+*.bak
+
