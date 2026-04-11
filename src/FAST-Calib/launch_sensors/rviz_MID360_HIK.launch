@@ -1,6 +1,7 @@
 <launch>
     <!-- ========== hikrobot_camera ========== -->
-    <rosparam file="$(find hikrobot_camera)/config/camera.yaml" command="load" />
+    <!-- <rosparam file="$(find hikrobot_camera)/config/camera-trigger.yaml" command="load" /> -->
+	<rosparam file="$(find hikrobot_camera)/config/camera.yaml" command="load" />
     <node pkg="hikrobot_camera" type="hikrobot_camera" name="hikrobot_camera" respawn="true" output="screen" />
 
     <!-- ========== livox_ros_driver2 ========== -->
@@ -12,7 +13,7 @@
 	<arg name="data_src" default="0"/>
 	<arg name="publish_freq" default="10.0"/>
 	<arg name="output_type" default="0"/>
-	<arg name="rviz_enable" default="true"/>
+	<arg name="rviz_enable" default="false"/>
 	<arg name="rosbag_enable" default="false"/>
 	<arg name="cmdline_arg" default="$(arg bd_list)"/>
 	<arg name="msg_frame_id" default="livox_frame"/>

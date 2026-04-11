@@ -3,15 +3,15 @@
 - wiki可参考: [简达智能的wiki](https://gitee.com/gwmunan/ros2/wikis)
 - 参考视频：[GundaSmart: SLAM系列之Fast Livo复现](https://www.bilibili.com/video/BV1T142197ci)
 
-### 项目相关仓库readme导航
+## 项目相关仓库readme导航
 
-> #### 驱动
+> ### 驱动
 > - [HIKROBOT-MVS-CAM](src/HIKROBOT-MVS-CAMERA-ROS/README.md)
 >> - 海康威视工业相机SDK的ros驱动依赖MVS的库文件。因此请先安装[MVS客户端](https://www.hikrobotics.com/cn/machinevision/service/download/?module=0)，根据自己的平台架构下载安装，或使用`additional_software`中预先下载的版本。
 > - [livox_ros_driver2](src/livox_ros_driver2/README.md)
 > - [Livox-SDK2](src/Livox-SDK2/README.md)
 
-> #### 标定与启动
+> ### 标定与启动
 > - [FAST-Calib readme](src/FAST-Calib/README.md)
 > - [FAST-Calib workflow](src/FAST-Calib/workflow.md)
 > - [FAST-LIVO2 readme](src/FAST-LIVO2/README.md)
@@ -22,16 +22,26 @@
 ## 编译
 如果需要编译，在src所在的目录执行 `catkin_make` 即可，必要时删除`build` 和 `devel`目录。
 
-## 硬件
-### 硬件结构
+## 硬件与配件
+### 外壳结构
 * 本项目使用的是基于GitHub [`liv-handhold2 (LIV-Eye)`](https://github.com/hku-mars/LIV_handhold_2)仓库提供文件修改的3D打印件，3D打印模型位于`CAD_models`。
-* 硬件部分使用MID-360以及海康工业相机MV-CS020-10UC。
-* 项目运行在Nvidia Jetson Orin NX（aarch64架构）。
 
-### 同步器
+### 硬件选型
+* 硬件部分使用MID-360以及海康工业相机MV-CS020-10UC。
+* 项目运行在Nvidia Jetson Orin NX（aarch64架构），所以一些驱动（如MVS）与FAST-LIVO2原项目使用的驱动不一致。
+
+### Livox Viewer 2
+唯一与MID-360兼容的官方工具。连接LiDAR要设置本机LAN IP为192.168.1.50，应用里面可以设置硬件级噪点滤除等功能。
+
+如果遇到PIN10 串口GPRMC消息输入没反应的话，试试用Livox Viewer 2升级MID-360固件。
+
+### 硬件同步与同步器连接（可选）
+* ***FAST-LIVO2不强制要求使用硬件同步*** ，但理论上使用硬件同步的效果更好。如果使用软同步，修改`src/FAST-LIVO2/config/mid360.yaml`的`img_time_offset`（时间偏移）参数。
 * 本项目对应使用的是GitHub [`liv-handhold`](https://github.com/xuankuzcr/LIV_handhold)仓库中使用的自制STM32硬件同步器。  
 * 关于引脚图，工业相机的引脚可直接使用仓库对应的引脚，MID-360使用`MID360-pin8`对应`STM32-PB5`、`MID360-pin10`对应`STM32-PA9`。  
-* 目前不确定PA9输出对LiDAR是否真正有效。也不确定硬件同步器对LiDAR的作用有效性。
+* 注意线材焊接的可靠性，虚焊会导致波形失真、串口通信异常，导致硬件同步失效。
+
+#### 硬件接口与引脚连接指南
 <center>
 
 ![硬件连线示意图](./readme_img/hardware-line.png)   
@@ -108,15 +118,15 @@ MID360引脚图
   </tr>
   <tr>
     <td>PA1</td>
-    <td>MVS camera PIN2 (OPTO_IN)</td>
+    <td>MVS camera PIN2 (PPS)</td>
   </tr>
   <tr>
     <td>PB5</td>
-    <td>MID-360 PIN8</td>
+    <td>MID-360 PIN8（PPS）</td>
   </tr>
   <tr>
     <td>PA9</td>
-    <td>MID-360 PIN10</td>
+    <td>MID-360 PIN10（串口输出）</td>
   </tr>
   <tr>
     <td>VCC</td>
@@ -130,8 +140,9 @@ MID360引脚图
 
 </center>
 
-## 关于海康工业相机的硬件同步
-`HIKROBOT-MVS-CAMERA-ROS` 仓库本身代码没有写硬件同步  
+---
+#### 关于海康工业相机的硬件同步
+`HIKROBOT-MVS-CAMERA-ROS` 仓库本身代码没有写硬件同步功能，但代码中有可修改的相关函数  
 修改软硬件同步模式需要修改 `src/HIKROBOT-MVS-CAMERA-ROS/include/hikrobot_camera.hpp` 207行附近，并重新编译：
 ``` hpp
         //软件触发0，硬件触发1
@@ -148,7 +159,18 @@ MID360引脚图
 `src/HIKROBOT-MVS-CAMERA-ROS/launch/hikrobot_camera_rviz.launch`   
 `src/HIKROBOT-MVS-CAMERA-ROS/config/camera.yaml`
 
-## MID-360的硬件同步测试
+---
+#### MID-360的硬件同步
+* PA9输出模拟的GPRMC消息，示例：
+  > $GPRMC,000010.00,A,2237.496474,N,11356.089515,E,0.0,225.5,230520,2.3,W,A\*29  
+  > $GPRMC,HHMMSS.00,状态,纬度,北纬/南纬,经度,东经/西经,速度,航向,DDMMYY,磁偏角,模式\*校验和
+* PA9串口输出的参数：
+  > 波特率: 9600  
+  > 校验位: None  
+  > 数据位: 8  
+  > 停止位（如有）: 1  
+
+看ROS消息的header time，如果实际time与理论time的误差在1ms以内，则可判定硬件同步有起作用。
 
 ## LIVOX MID-360与海康MV-CS020-10UC一同启动
 在 `src/FAST-Calib/launch_sensors/rviz_MID360_HIK.launch` 中配置了MID360和HIK-MV-CS020-10UC（对应软触发，检查`HIKROBOT-MVS-CAMERA-ROS` 仓库`hikrobot_camera.hpp` 代码并编译）  
@@ -164,7 +186,33 @@ MID360引脚图
 
 输出文件名格式为 20260401_2156.bag
 
-## 关于LiDAR-CAM联合标定
+## 标定
+
+### 相机标定（张氏标定法）
+- 建议使用80mm棋盘格，适合远距离标定。
+- 建议7*10
+
+具体步骤：
+1. 安装标定功能包  
+``` bash
+sudo apt install ros-$ROS_DISTRO-camera-calibration
+```
+2. 制作标定板: [棋盘格标定板生成器](https://calib.io/zh/pages/camera-calibration-pattern-generator)
+3. 打开相机节点
+``` bash
+roslaunch mvs_ros_pkg mvs_camera_trigger.launch
+```
+4. 打开标定节点
+``` bash
+rosrun camera_calibration cameracalibrator.py --size 7x4 --square 0.08 image:=/left_camera/image
+```
+5. 移动摄像头让4个条变绿
+![标定工具图](readme_img/calib-instruct.png)
+6. 点击标定按钮计算内参
+
+
+
+### LiDAR-CAM联合标定
 录制完成rosbag之后，分别新建三个终端窗口，依次执行：
 ``` bash
 roscore
@@ -219,12 +267,17 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 
 ## 踩坑记录
 ### 启动fastlivo2什么也看不到  
+#### Case1
 一定记得把launch文件里面的livox点云数据结构改为自定义格式！！！  
 否则启动fastlivo2什么也看不到     
 文件位置 `src/FAST-Calib/launch_sensors/rviz_MID360_HIK.launch`
 ```
 <arg name="xfer_format" default="1"/>
 ```
+
+#### Case2
+注意LiDAR和相机消息的时间戳，相差太大会自动丢弃，导致没有输出。
+
 
 ### 贴图不准（尤其是物体边缘）
 这时要调整`src/FAST-LIVO2/config/mid360.yaml`的img_time_offset
@@ -234,3 +287,10 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 rqt_bag src/FAST-Calib/calib_data/20260402_1835.bag 
 ```
 这里可以看到时间轴，计算数据之间的平均差写入yaml文件，效果会有所改善。
+
+## 待解决
+- 使用硬件同步器时，由于GPRMC消息附带时间时固定的，导致与相机的time stamp 差距过大，无法正常运行算法。
+
+  - Solution 1: 用ESP32，上电获取最新CST时间戳
+  - Solution 2: 用上位机（Orin）通过串口发送CST时间戳
+
