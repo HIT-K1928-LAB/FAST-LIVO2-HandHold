@@ -266,6 +266,11 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 ```
 
 ## 踩坑记录
+### HIKROBOT-MVS-CAMERA-ROS包编译报错
+改CMakeLists.txt：
+* opencv版本
+* target_link_libraries里面若有报错，去`/opt/MVS/lib/aarch64/`里面找，找到的就改成对应的版本，找不到直接注释掉。
+
 ### 启动fastlivo2什么也看不到  
 #### Case1
 一定记得把launch文件里面的livox点云数据结构改为自定义格式！！！  
