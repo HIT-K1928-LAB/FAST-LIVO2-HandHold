@@ -161,14 +161,16 @@ MID360引脚图
 
 ---
 #### MID-360的硬件同步
-* PA9输出模拟的GPRMC消息，示例：
+* STM32 PA9输出模拟的GPRMC消息，示例：
   > $GPRMC,000010.00,A,2237.496474,N,11356.089515,E,0.0,225.5,230520,2.3,W,A\*29  
   > $GPRMC,HHMMSS.00,状态,纬度,北纬/南纬,经度,东经/西经,速度,航向,DDMMYY,磁偏角,模式\*校验和
-* PA9串口输出的参数：
+* STM32 PA9串口输出的参数：
   > 波特率: 9600  
   > 校验位: None  
   > 数据位: 8  
   > 停止位（如有）: 1  
+
+MID-360的硬件同步原理见[livox_wiki](https://github.com/Livox-SDK/livox_wiki_cn/blob/master/source/tutorials/new_product/common/time_sync.rst)
 
 看ROS消息的header time，如果实际time与理论time的误差在1ms以内，则可判定硬件同步有起作用。
 
@@ -178,13 +180,6 @@ MID360引脚图
 执行 `roslaunch rviz_MID360_HIK.launch` 即可启动，（带rviz），如果不需要rviz，在launch文件里面把rviz disable即可。
 
 相关rviz配置文件在 `src/FAST-Calib/rviz_cfg/MID360_HIKCS020.rviz` 
-
-## rosbag文件录制
-要先启动相应传感器的topic发布（见上节），再录制。   
-
-`src/FAST-Calib/calib_data/record_MID360_HIK.sh` 是录制脚本，具体cat一下就知道
-
-输出文件名格式为 20260401_2156.bag
 
 ## 标定
 
@@ -213,6 +208,15 @@ rosrun camera_calibration cameracalibrator.py --size 7x4 --square 0.08 image:=/l
 
 
 ### LiDAR-CAM联合标定
+
+#### rosbag文件录制
+要先启动相应传感器的topic发布（见上节），再录制。   
+
+`src/FAST-Calib/calib_data/record_MID360_HIK.sh` 是录制脚本，具体cat一下就知道
+
+输出文件名格式为 20260401_2156.bag
+
+#### 联合标定
 录制完成rosbag之后，分别新建三个终端窗口，依次执行：
 ``` bash
 roscore
@@ -272,7 +276,7 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 * target_link_libraries里面若有报错，去`/opt/MVS/lib/aarch64/`里面找，找到的就改成对应的版本，找不到直接注释掉。
 
 ### 启动fastlivo2什么也看不到  
-#### Case1
+* Case1
 一定记得把launch文件里面的livox点云数据结构改为自定义格式！！！  
 否则启动fastlivo2什么也看不到     
 文件位置 `src/FAST-Calib/launch_sensors/rviz_MID360_HIK.launch`
@@ -280,7 +284,7 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 <arg name="xfer_format" default="1"/>
 ```
 
-#### Case2
+* Case2
 注意LiDAR和相机消息的时间戳，相差太大会自动丢弃，导致没有输出。
 
 
