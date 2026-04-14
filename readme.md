@@ -36,8 +36,9 @@
 如果遇到PIN10 串口GPRMC消息输入没反应的话，试试用Livox Viewer 2升级MID-360固件。
 
 ### 硬件同步与同步器连接（可选）
-* ***FAST-LIVO2不强制要求使用硬件同步*** ，但理论上使用硬件同步的效果更好。如果使用软同步，修改`src/FAST-LIVO2/config/mid360.yaml`的`img_time_offset`（时间偏移）参数。
-* 本项目对应使用的是GitHub [`liv-handhold`](https://github.com/xuankuzcr/LIV_handhold)仓库中使用的自制STM32硬件同步器。  
+* ***FAST-LIVO2不强制要求使用硬件同步*** ，但使用硬件同步的效果更好，可将数据周期采样时间差控制在2ms以内。如果使用软同步，修改`src/FAST-LIVO2/config/mid360.yaml`的`img_time_offset`（时间偏移）参数，约0.1，按实际情况调整。
+* 本项目对应使用的是GitHub [`liv-handhold`](https://github.com/xuankuzcr/LIV_handhold)仓库中使用的自制STM32硬件同步器。
+* 本项目参考 [`liv-handhold`](https://github.com/xuankuzcr/LIV_handhold)仓库中对`livox_ros_driver2`的更改，修复了STM32硬件同步器由于使用固定初始值的虚拟时间，导致MID-360与工业相机Header Time差异过大，无法运行FAST-LIVO2的问题。
 * 关于引脚图，工业相机的引脚可直接使用仓库对应的引脚，MID-360使用`MID360-pin8`对应`STM32-PB5`、`MID360-pin10`对应`STM32-PA9`。  
 * 注意线材焊接的可靠性，虚焊会导致波形失真、串口通信异常，导致硬件同步失效。
 
@@ -298,8 +299,5 @@ rqt_bag src/FAST-Calib/calib_data/20260402_1835.bag
 这里可以看到时间轴，计算数据之间的平均差写入yaml文件，效果会有所改善。
 
 ## 待解决
-- 使用硬件同步器时，由于GPRMC消息附带时间时固定的，导致与相机的time stamp 差距过大，无法正常运行算法。
-
-  - Solution 1: 用ESP32，上电获取最新CST时间戳
-  - Solution 2: 用上位机（Orin）通过串口发送CST时间戳
+- 使用硬件同步器时，由于GPRMC消息附带时间时固定的，导致与相机的time stamp 差距过大，无法正常运行算法。 因此使用xuankuzcr的方法，将相机时间戳与LiDAR时间戳拉齐，但可能会导致软同步模式有轻微ms级误差。
 

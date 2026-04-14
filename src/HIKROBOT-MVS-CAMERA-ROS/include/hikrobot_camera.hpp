@@ -7,6 +7,9 @@
 #include "MvErrorDefine.h"
 #include "CameraParams.h"
 #include "MvCameraControl.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 namespace camera
 {
@@ -18,6 +21,15 @@ namespace camera
     bool frame_empty = 0;
     //********** mutex ************************************/
     pthread_mutex_t mutex;
+
+    /** Shared-memory structure matching the layout written by lddc (LiDAR driver).
+     *  'low' holds the latest LiDAR frame timestamp in nanoseconds. */
+    struct LidarTimeStamp {
+      int64_t high;
+      int64_t low;
+    };
+    /** Pointer to the shared-memory region populated by the LiDAR driver. */
+    LidarTimeStamp *lidar_time_ptr = nullptr;
     //********** CameraProperties config ************************************/
     enum CamerProperties
     {
@@ -273,6 +285,35 @@ namespace camera
             perror("pthread_create failed\n");
             exit(-1);
         }
+
+        // Open the shared-memory region written by the LiDAR driver so that
+        // each captured image can be stamped with the LiDAR hardware timestamp.
+        const char *home_dir = getenv("HOME");
+        if (home_dir != nullptr)
+        {
+            std::string path_for_time_stamp = std::string(home_dir) + "/timeshare";
+            int ts_fd = open(path_for_time_stamp.c_str(), O_RDWR);
+            if (ts_fd == -1)
+            {
+                printf("[hikrobot] Could not open timeshare file – camera will use system time\n");
+            }
+            else
+            {
+                LidarTimeStamp *mapped = reinterpret_cast<LidarTimeStamp *>(
+                    mmap(nullptr, sizeof(LidarTimeStamp), PROT_READ | PROT_WRITE, MAP_SHARED, ts_fd, 0));
+                close(ts_fd);
+                if (mapped == MAP_FAILED)
+                {
+                    printf("[hikrobot] mmap failed – camera will use system time\n");
+                }
+                else
+                {
+                    lidar_time_ptr = mapped;
+                    printf("[hikrobot] LiDAR timeshare memory mapped – hardware time sync enabled\n");
+                }
+            }
+        }
+
         //********** frame **********/
 
         nRet = pthread_create(&nThreadID, NULL, HKWorkThread, handle);
@@ -326,6 +367,13 @@ namespace camera
         printf("MV_CC_DestroyHandle succeed.\n");
         // 销毁互斥量
         pthread_mutex_destroy(&mutex);
+        // Unmap the shared-memory region if it was successfully mapped.
+        if (lidar_time_ptr != nullptr &&
+            lidar_time_ptr != reinterpret_cast<LidarTimeStamp *>(MAP_FAILED))
+        {
+            munmap(lidar_time_ptr, sizeof(LidarTimeStamp));
+            lidar_time_ptr = nullptr;
+        }
     }
 
     //^ ********************************** Camera constructor************************************ //
