@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <math.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #include "include/ros_headers.h"
 
@@ -59,6 +60,7 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
   global_imu_pub_ = nullptr;
   cur_node_ = nullptr;
   bag_ = nullptr;
+  pointt = nullptr;
 }
 #elif defined BUILDING_ROS2
 Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
@@ -71,6 +73,7 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
       frame_id_(frame_id) {
   publish_period_ns_ = kNsPerSecond / publish_frq_;
   lds_ = nullptr;
+  pointt = nullptr;
 #if 0
   bag_ = nullptr;
 #endif
@@ -104,6 +107,10 @@ Lddc::~Lddc() {
   }
 #endif
   std::cout << "lddc destory!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+  if (pointt != nullptr && pointt != reinterpret_cast<time_stamp *>(MAP_FAILED)) {
+    munmap(pointt, sizeof(time_stamp));
+    pointt = nullptr;
+  }
 }
 
 int Lddc::RegisterLds(Lds *lds) {
@@ -165,6 +172,35 @@ void Lddc::PollingLidarPointCloudData(uint8_t index, LidarDevice *lidar) {
     return;
   }
 
+  // Initialise the shared-memory region once so the camera driver can read
+  // the latest LiDAR frame timestamp and stamp its images accordingly.
+  if (pointt == nullptr) {
+    const char *home_dir = getenv("HOME");
+    if (home_dir != nullptr) {
+      std::string path_for_time_stamp = std::string(home_dir) + "/timeshare";
+      int fd = open(path_for_time_stamp.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0600);
+      if (fd == -1) {
+        fprintf(stderr, "[lddc] Failed to open timeshare file, camera time sync disabled\n");
+      } else {
+        if (ftruncate(fd, sizeof(time_stamp)) == -1) {
+          fprintf(stderr, "[lddc] ftruncate failed, camera time sync disabled\n");
+          close(fd);
+        } else {
+          time_stamp *mapped = reinterpret_cast<time_stamp *>(
+              mmap(nullptr, sizeof(time_stamp), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+          close(fd);
+          if (mapped == MAP_FAILED) {
+            fprintf(stderr, "[lddc] mmap failed, camera time sync disabled\n");
+          } else {
+            mapped->high = 0;
+            mapped->low  = 0;
+            pointt = mapped;
+          }
+        }
+      }
+    }
+  }
+
   while (!lds_->IsRequestExit() && !QueueIsEmpty(p_queue)) {
     if (kPointCloud2Msg == transfer_format_) {
       PublishPointcloud2(p_queue, index);
@@ -211,6 +247,11 @@ void Lddc::PublishPointcloud2(LidarDataQueue *queue, uint8_t index) {
     uint64_t timestamp = 0;
     InitPointcloud2Msg(pkg, cloud, timestamp);
     PublishPointcloud2Data(index, timestamp, cloud);
+    // Write the LiDAR hardware timestamp into shared memory so the camera
+    // driver can use it to stamp captured images.
+    if (pointt != nullptr && pointt != reinterpret_cast<time_stamp *>(MAP_FAILED)) {
+      pointt->low = static_cast<int64_t>(timestamp);
+    }
   }
 }
 
@@ -227,6 +268,11 @@ void Lddc::PublishCustomPointcloud(LidarDataQueue *queue, uint8_t index) {
     InitCustomMsg(livox_msg, pkg, index);
     FillPointsToCustomMsg(livox_msg, pkg);
     PublishCustomPointData(livox_msg, index);
+    // Write the LiDAR hardware timestamp into shared memory so the camera
+    // driver can use it to stamp captured images.
+    if (pointt != nullptr && pointt != reinterpret_cast<time_stamp *>(MAP_FAILED)) {
+      pointt->low = static_cast<int64_t>(livox_msg.timebase);
+    }
   }
 }
 

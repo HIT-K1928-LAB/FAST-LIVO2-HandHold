@@ -59,7 +59,18 @@ int main(int argc, char **argv)
         cv_ptr->image = src;
 #endif
         image_msg = *(cv_ptr->toImageMsg());
-        image_msg.header.stamp = ros::Time::now();  // ros发出的时间不是快门时间
+        // Use the LiDAR hardware timestamp when available so that the camera
+        // and LiDAR point-cloud streams share the same time domain, which is
+        // required for FAST-LIVO2 to associate frames correctly.
+        if (camera::lidar_time_ptr != nullptr &&
+            camera::lidar_time_ptr->low != 0)
+        {
+            image_msg.header.stamp = ros::Time(camera::lidar_time_ptr->low / 1000000000.0);
+        }
+        else
+        {
+            image_msg.header.stamp = ros::Time::now();
+        }
         image_msg.header.frame_id = "hikrobot_camera";
 
         camera_info_msg.header.frame_id = image_msg.header.frame_id;

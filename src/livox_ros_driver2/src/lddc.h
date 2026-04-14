@@ -29,8 +29,21 @@
 
 #include "driver_node.h"
 #include "lds.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 namespace livox_ros {
+
+/** Shared memory structure for LiDAR-camera hardware time synchronization.
+ *  The LiDAR driver writes the latest LiDAR frame timestamp (nanoseconds) into
+ *  the 'low' field of a memory-mapped file at ~/timeshare.  The camera driver
+ *  reads the same file and stamps every captured image with this timestamp so
+ *  that both sensor streams share the same time domain. */
+typedef struct {
+  int64_t high;
+  int64_t low;   // LiDAR hardware timestamp in nanoseconds
+} time_stamp;
 
 /** Send pointcloud message Data to ros subscriber or save them in rosbag file */
 typedef enum {
@@ -95,6 +108,7 @@ class Lddc final {
 
  public:
   Lds *lds_;
+  time_stamp *pointt;   // Pointer to the shared-memory region (~/timeshare)
 
  private:
   void PollingLidarPointCloudData(uint8_t index, LidarDevice *lidar);
