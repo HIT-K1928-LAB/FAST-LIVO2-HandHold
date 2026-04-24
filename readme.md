@@ -270,6 +270,42 @@ launch文件这里对应`src/FAST-LIVO2/launch/mapping_mid360.launch`。
 roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 ```
 
+## 如果要在docker容器中配置
+* 创建好容器环境
+  ```bash
+  docker run -it \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  --net=host \
+  -v /home/orin09/FAST-LIVO2-HandHold:/root/FAST-LIVO2-HandHold \
+  -w /root/FAST-LIVO2-HandHold \
+  --name=fast-livo2 \
+  nvcr.io/nvidia/l4t-jetpack:r35.3.1
+  ```
+* 安装ros noetic
+  ```bash
+  wget http://fishros.com/install -O fishros && . fishros
+  ```
+* 编译安装Sophus
+  ```bash
+  cd src/Sophus
+  mkdir build && cd build && cmake ..
+  make
+  sudo make install
+  ```
+* 安装海康工业相机驱动依赖
+  ```bash
+  cd additional_software/
+  dpkg -i ./MVS-3.0.1_aarch64_20251113.deb
+  dpkg -i ./MvCamCtrlSDK_Runtime-4.7.0_aarch64_20251113.deb
+  ```
+* 编译catkin
+  ```bash
+  cd ..
+  catkin_make
+  ```
+* ***待完善***
+
 ## 踩坑记录
 ### 编译遇到opencv2/aruco.hpp问题（待完善）
 这是因为 ArUco 模块在 OpenCV 3.x/4.x 中被分离到了 opencv_contrib 中，需要单独安装。
