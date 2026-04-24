@@ -196,11 +196,11 @@ sudo apt install ros-$ROS_DISTRO-camera-calibration
 2. 制作标定板: [棋盘格标定板生成器](https://calib.io/zh/pages/camera-calibration-pattern-generator)
 3. 打开相机节点
 ``` bash
-roslaunch mvs_ros_pkg mvs_camera_trigger.launch
+roslaunch src/HIKROBOT-MVS-CAMERA-ROS/launch/hikrobot_camera_rviz_trigger.launch
 ```
 4. 打开标定节点
 ``` bash
-rosrun camera_calibration cameracalibrator.py --size 7x4 --square 0.08 image:=/left_camera/image
+rosrun camera_calibration cameracalibrator.py --size 7x4 --square 0.08 image:=/left_camera/image(这里要换成hik相机的topic)
 ```
 5. 移动摄像头让4个条变绿
 ![标定工具图](readme_img/calib-instruct.png)
@@ -271,6 +271,11 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 ```
 
 ## 踩坑记录
+### 编译遇到opencv2/aruco.hpp问题（待完善）
+这是因为 ArUco 模块在 OpenCV 3.x/4.x 中被分离到了 opencv_contrib 中，需要单独安装。
+* 首先检查opencv是否安装，若未安装，安装opencv4.2.0
+* 安装opencv-contrib
+
 ### HIKROBOT-MVS-CAMERA-ROS包编译报错
 改CMakeLists.txt：
 * opencv版本
