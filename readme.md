@@ -377,6 +377,25 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
     ls /usr/include/opencv4/opencv2/ | grep aruco.hpp
     ```
 
+### libusb编译连接错误
+> /usr/bin/ld: /usr/lib/gcc/aarch64-linux-gnu/9/../../../aarch64-linux-gnu/libpcl_io.so: undefined reference to `libusb_set_option'
+> collect2: error: ld returned 1 exit status
+
+解决方案
+在相关报错包的CMakeLists.txt中的find_library、target_link_libraries部分添加libusb依赖：
+``` cmake
+...
+find_library(LIBUSB_1_LIBRARY usb-1.0 REQUIRED)
+
+...
+
+target_link_libraries(fast_calib
+  ...
+  ${LIBUSB_1_LIBRARY}
+)
+...
+```
+
 ### HIKROBOT-MVS-CAMERA-ROS包编译报错
 改CMakeLists.txt：
 * opencv版本
