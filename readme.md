@@ -304,7 +304,6 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
   cd ..
   catkin_make
   ```
-* ***待完善***
 
 ## 踩坑记录
 ### FAST-Calib 编译遇到opencv2/aruco.hpp问题
