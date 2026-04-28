@@ -307,10 +307,75 @@ roslaunch src/FAST-LIVO2/launch/mapping_mid360.launch
 * ***待完善***
 
 ## 踩坑记录
-### 编译遇到opencv2/aruco.hpp问题（待完善）
+### FAST-Calib 编译遇到opencv2/aruco.hpp问题
 这是因为 ArUco 模块在 OpenCV 3.x/4.x 中被分离到了 opencv_contrib 中，需要单独安装。
-* 首先检查opencv是否安装，若未安装，安装opencv4.2.0
-* 安装opencv-contrib
+
+#### 无损补全原厂 OpenCV 的 contrib 模块（保留 CUDA 加速）
+由于l4t镜像自带的opencv是4.5.4，为避免破坏系统环境依赖，保证cuda加速等功能可用，我们可以编译和原厂版本、安装路径、CUDA 配置完全一致的 OpenCV 4.5.4 + opencv_contrib，覆盖安装。
+
+操作步骤
+1. 安装编译依赖（不卸载任何现有包）
+    ``` bash
+    sudo apt update
+    sudo apt install -y build-essential cmake git pkg-config libgtk-3-dev \
+    libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
+    libxvidcore-dev libx264-dev libjpeg-dev libpng-dev libtiff-dev \
+    gfortran openexr libatlas-base-dev python3-dev python3-numpy \
+    libtbb2 libtbb-dev libeigen3-dev libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev
+    ```
+2. 下载和系统版本完全匹配的源码
+    ``` bash
+    cd ~
+    # 必须和你当前的OpenCV版本完全一致：4.5.4
+    git clone --depth 1 --branch 4.5.4 https://github.com/opencv/opencv.git
+    git clone --depth 1 --branch 4.5.4 https://github.com/opencv/opencv_contrib.git
+    ```
+3. CMake 配置（完全匹配 Jetson 原厂参数）
+    ``` bash
+    cd opencv
+    mkdir build && cd build
+    
+    # 核心参数说明：
+    # CMAKE_INSTALL_PREFIX=/usr：和原厂安装路径完全一致，保证原有组件正常链接
+    # CUDA_ARCH_BIN=8.7：Orin NX专属算力架构，必须正确设置才能保留CUDA加速
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
+    -D CMAKE_INSTALL_PREFIX=/usr \
+    -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
+    -D WITH_CUDA=ON \
+    -D CUDA_ARCH_BIN=8.7 \
+    -D CUDA_ARCH_PTX=8.7 \
+    -D WITH_CUDNN=ON \
+    -D OPENCV_DNN_CUDA=ON \
+    -D ENABLE_FAST_MATH=1 \
+    -D CUDA_FAST_MATH=1 \
+    -D WITH_CUBLAS=1 \
+    -D WITH_LIBV4L=ON \
+    -D WITH_GSTREAMER=ON \
+    -D BUILD_opencv_python3=ON \
+    -D BUILD_EXAMPLES=OFF \
+    -D BUILD_DOCS=OFF \
+    -D BUILD_PERF_TESTS=OFF \
+    -D BUILD_TESTS=OFF \
+    -D OPENCV_ENABLE_NONFREE=ON \
+    ..
+    ```
+4. 编译并覆盖安装
+    ``` bash
+    # Orin NX是8核CPU，用-j8加速编译，全程约30分钟
+    make -j8
+    # 覆盖安装到系统路径，补全contrib模块
+    sudo make install
+    # 更新系统动态链接库缓存
+    sudo ldconfig
+    ```
+5. 验证安装
+    ``` bash
+    # 确认版本仍为4.5.4
+    pkg-config --modversion opencv4
+    # 确认ArUco头文件已存在
+    ls /usr/include/opencv4/opencv2/ | grep aruco.hpp
+    ```
 
 ### HIKROBOT-MVS-CAMERA-ROS包编译报错
 改CMakeLists.txt：
